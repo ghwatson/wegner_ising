@@ -14,35 +14,26 @@
 #include <typeinfo>
 
 const int n_dims = 3;
-const int N = 20; //TODO: template these in.
+const int N = 20;
 
-//TODO: To generalize this to hypertoric codes, will need to swap out data
-//structure for a combinatorial map or linear complex data structure (see CGAL)
-//template <int n_dims>
 class WegnerMC{
   private:
-    //typedef boost::multi_array<int, n_dims> array_nt;
     typedef boost::multi_array<int, 3> array_3t;
     typedef boost::multi_array<int, 1> array_1t;
-    //typedef boost::multi_array<int*, 3> array_3pt;
     typedef boost::multi_array_types::index_range range;
     typedef array_3t::array_view<3>::type view_3t;
     
     MTRand m_rgen = MTRand();
     array_3t m_lattice;
-
-    //TODO: In future, a generic scheme would have some tuple paired with each lattice point
-    //so that the face centers can store both disorder and product value.
     array_3t m_plaqs[3]; //plaquette products
-
-    //view_3t* testview;
+    
     view_3t** m_disorders = new view_3t*[3];
     view_3t** m_spins = new view_3t*[3];
 
     //Neighbourhood + Incidence relationships
-    //TODO: Implement these (move logic from update_plaqs)
-    array_1t m_spin_to_plaqs;
-    array_1t m_plaq_to_spins;
+    //TODO: Implement these? (move logic from update_plaqs)
+    //array_1t m_spin_to_plaqs;
+    //array_1t m_plaq_to_spins;
 
     double m_Th; //= 100;
     double m_E0; //g.s energy
@@ -87,8 +78,6 @@ class WegnerMC{
  * edges -> used EEO
  * fc -> used EOO
  */
-//template <int n_dims>
-//WegnerMC<n_dims>::WegnerMC(int N, double e){
 WegnerMC::WegnerMC(double e){
 
   //Set disorder strength.
@@ -129,7 +118,7 @@ WegnerMC::WegnerMC(double e){
   //Get g.s. energy for future reference
   m_E0 = calc_E();
   
-}//WegnerMC(N,e)
+}//WegnerMC
 
 WegnerMC::~WegnerMC(){
   //deallocate dynamically assigned memory.
@@ -139,8 +128,6 @@ WegnerMC::~WegnerMC(){
   }
 }
 
-//template <int n_dims>
-//double WegnerMC<n_dims>::calc_E(){
 double WegnerMC::calc_E(){
   // Sum the terms in the Hamiltonian
   double E = 0;
@@ -148,24 +135,18 @@ double WegnerMC::calc_E(){
   
   return E;
 }
-//template <int n_dims>
-//double WegnerMC<n_dims>::calc_dE(){
 double WegnerMC::calc_dE(){
   //Get energy given previous energy step.
   //pass in an array to allocate to?
   double dE = 0;
   return dE;
 }
-//template <int n_dims>
-//double WegnerMC<n_dims>::calc_Eflucs(){
 double WegnerMC::calc_Eflucs(){
   //stuff
   //<E^2> - <E>^2
   double Eflucs = 0;
   return Eflucs;
 }
-//template <int n_dims>
-//double WegnerMC<n_dims>::calc_Cv(){
 double WegnerMC::calc_Cv(){
   //stuff
   double Cv = 0;
@@ -228,86 +209,23 @@ void WegnerMC::update_plaqs(){
     if (x == 20 and y == 0 and z == 0 and orientation == 2){
       std::cout << "hey0" << std::endl;
     }
-    //std::cout << x << " " << y << " " << z << " " << orientation << std::endl;
   }//orientation
   }//z
   }//y
   }//x
 }//update_plaqs
 
-////TODO: INCOMPLETE. Complete this version for local updates later if needed.
-////TODO: need to add in the negative plaquettes as well as PBC
-//void WegnerMC::update_plaqs(int orientation, int x, int y, int z){
-  ////iterate across each site, and also the spin on each site
-    
-    ////Get the 2Nx2Nx2N index.
-    //int indices_2d[3] = {2*x,2*y,2*z};
-    //indices_2d[orientation] += 1;
-
-    ////There are plaquettes with normals facing in every direction except orientation.
-    //for (int normal = 0; normal < n_dims; normal++){
-
-      ////Plaquettes' normals do not coincide with orientation of the spin site. 
-      //if (normal == orientation){
-        //continue;
-      //}
-
-      ////Take a cross product to acquire "dir", which spans the plaq with "orientation"
-      //int dir;
-      //for (int i = 0; i < n_dims; i++){
-        //if (normal != i and orientation != i)
-          //{ dir = i;}
-      //}
-
-      ////These are the indices for the spins on the plaquette
-      //int* plaq_idx[4];
-      //plaq_idx[0] = indices_2d;
-      //plaq_idx[1] = indices_2d;
-      //plaq_idx[1][dir] += 1;
-      //plaq_idx[1][orientation] += 1;
-      //plaq_idx[2] = indices_2d;
-      //plaq_idx[2][dir] += 2;
-      //plaq_idx[3] = indices_2d;
-      //plaq_idx[3][dir] += 1;
-      //plaq_idx[3][orientation] -= 1;
-
-      ////Get the spins on the plaquette
-      //int spins[4];
-      //for (int i = 0; i < 4; i++){
-        //boost::array<array_3t::index,3> id = {*plaq_idx[i]};
-        //spins[i] = m_lattice(id);
-      //}
-
-      ////Update
-      //m_plaqs[normal][x][y][z] = spins[0]*spins[1]*spins[2]*spins[3];
-
-      //if (x == 20 and y == 0 and z == 0 and orientation == 2){
-        //std::cout << "hey0" << std::endl;
-      ////std::cout << x << " " << y << " " << z << " " << orientation << std::endl;
-  //}
-  //}//orientation
-  //}//z
-  //}//y
-  //}//x
-//}//update_plaqs
-
-
-//template <int n_dims>
-//void WegnerMC<n_dims>::Initialize(double T_high){
 void WegnerMC::initialize(double T_high){
   //Get random configuration
 
   //Evolve until equilibrated
 }
 
-//template <int n_dims>
-//void WegnerMC<n_dims>::Evolve(double T, int steps){
 void WegnerMC::evolve(double T, int steps){
   //Perform standard MC
   //Alter the data structure
   //Save all the data
   //User must choose observables from a list that will be output.
 }
-
 
 #endif  /*WEGNER_MC_H_*/
