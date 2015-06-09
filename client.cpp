@@ -28,6 +28,8 @@ int main(){
   testclass myobj(1,3,2);
   
   WegnerMC sim = WegnerMC(0.2);
+
+  cout << "success!" << endl;
   
   return 0;
 }

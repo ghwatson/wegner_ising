@@ -13,23 +13,8 @@
 
 #include <typeinfo>
 
-
 const int n_dims = 3;
 const int N = 20; //TODO: template these in.
-
-//boost boilerplate
-// Using boost arrays to make it easier to generalize to higher dimensions.
-//typedef boost::multi_array<int, n_dims> array_nt;
-//typedef boost::multi_array<int, 3> array_3t;
-//typedef boost::multi_array<int, 2> array_2t;
-//typedef boost::multi_array<int, 1> array_1t;
-//typedef boost::multi_array_types::index_range range_t;
-//typedef boost::multi_array<int, 1>::const_iterator c_iter;
-//typedef array_nt::array_view<n_dims> subView;
-
-// Tools for multi-arrays.
-//array_1t::extent_gen extents;
-//array_2t::index_gen indices;
 
 //TODO: To generalize this to hypertoric codes, will need to swap out data
 //structure for a combinatorial map or linear complex data structure (see CGAL)
@@ -38,6 +23,8 @@ class WegnerMC{
   private:
     //typedef boost::multi_array<int, n_dims> array_nt;
     typedef boost::multi_array<int, 3> array_3t;
+    typedef boost::multi_array<int, 1> array_1t;
+    //typedef boost::multi_array<int*, 3> array_3pt;
     typedef boost::multi_array_types::index_range range;
     typedef array_3t::array_view<3>::type view_3t;
     
@@ -48,27 +35,18 @@ class WegnerMC{
     //so that the face centers can store both disorder and product value.
     array_3t m_plaqs[3]; //plaquette products
 
-    // Views for the plaquettes disorder terms and the spins
-    //TODO: use dynamic arrays to move this junk to constructor?
-    //view_3t m_disorders[3] = {
-        //m_lattice(boost::indices[evens][odds][odds]),
-        //m_lattice(boost::indices[odds][evens][odds]),
-        //m_lattice(boost::indices[odds][odds][evens])};
-    //view_3t m_spins[3] = {
-        //m_lattice(boost::indices[odds][evens][evens]),
-        //m_lattice(boost::indices[evens][odds][evens]),
-        //m_lattice(boost::indices[evens][evens][odds])};
-    
     //view_3t* testview;
     view_3t** m_disorders = new view_3t*[3];
     view_3t** m_spins = new view_3t*[3];
 
     //Neighbourhood + Incidence relationships
+    //TODO: Implement these (move logic from update_plaqs)
     array_1t m_spin_to_plaqs;
     array_1t m_plaq_to_spins;
 
     double m_Th; //= 100;
     double m_E0; //g.s energy
+    double m_e;
 
     //TODO: Change structure to utilize local updates to get dE.
     double calc_E();
@@ -80,14 +58,13 @@ class WegnerMC{
 
     //Index conversion
     double index_flatten(int x, int y, int z);
-    std::vector<int, 3> index_unflatten(int id);
+    std::vector<int> index_unflatten(int id);
 
     void update_plaqs();
-    void update_plaqs(int x, int y, int z);
-    void update_plaqs(int orientation, int x, int y, int z);
  
   public:
     WegnerMC(double e);
+    ~WegnerMC();
     void initialize(double T_high);
     void evolve(double T, int steps);
     void set_T_high(double Th){m_Th = Th;};
@@ -104,18 +81,18 @@ class WegnerMC{
 
 
 
-
-
 /*
  * bc -> unused OOO
  * sites -> unused EEE
  * edges -> used EEO
  * fc -> used EOO
  */
-//TODO: How would you write generic multi_array code without specifying dimension
 //template <int n_dims>
 //WegnerMC<n_dims>::WegnerMC(int N, double e){
 WegnerMC::WegnerMC(double e){
+
+  //Set disorder strength.
+  m_e = e;
 
   //Allocate data structure.
   m_lattice.resize(boost::extents[2*N][2*N][2*N]);
@@ -139,30 +116,28 @@ WegnerMC::WegnerMC(double e){
   std::fill(m_spins[2]->origin(), m_spins[2]->origin() + m_spins[2]->num_elements(), 1);
 
   //Initialize plaquette disorders (randomly +/- 1, strength specified in e)
-  std::fill(
-      m_disorders[0]->origin(),
-      m_disorders[0]->origin() + m_disorders[0]->num_elements(),
-      (m_rgen.rand()>=0.5) ? +1 : -1);
-  std::fill(
-      m_disorders[1]->origin(),
-      m_disorders[1]->origin() + m_disorders[1]->num_elements(),
-      (m_rgen.rand()>=0.5) ? +1 : -1);
-  std::fill(
-      m_disorders[2]->origin(),
-      m_disorders[2]->origin() + m_disorders[2]->num_elements(),
-      (m_rgen.rand()>=0.5) ? +1 : -1);
-
+  for (int normal = 0 ; normal < n_dims; normal++){
+    std::fill(
+        m_disorders[normal]->origin(),
+        m_disorders[normal]->origin() + m_disorders[normal]->num_elements(),
+        (m_rgen.rand()>=0.5) ? +1 : -1);
+  }
+  
   //Initialize the plaquette products
   update_plaqs();
-
 
   //Get g.s. energy for future reference
   m_E0 = calc_E();
   
 }//WegnerMC(N,e)
 
-//TODO: make a function that updates plaquette values, given a local update.
-
+WegnerMC::~WegnerMC(){
+  //deallocate dynamically assigned memory.
+  for (int i = 0; i < n_dims; i++){
+    delete[] m_disorders[i];
+    delete[] m_spins[i];
+  }
+}
 
 //template <int n_dims>
 //double WegnerMC<n_dims>::calc_E(){
@@ -209,70 +184,113 @@ double WegnerMC::index_flatten(int x, int y, int z){
 }
 
 //Convert 1D list index to a 3D coordinate
-std::vector<int, 3> index_unflatten(int id){
-  return 0;
+std::vector<int> WegnerMC::index_unflatten(int id){
+  std::vector<int> a;
+  return a;
 }
 
-
-//TODO: Is this function useful?
 void WegnerMC::update_plaqs(){
-}
-void WegnerMC::update_plaqs(int x, int y, int z){
-  //For accessing via 2Nx2Nx2N lattice
-  int product = 1;
-  int n_nbs = 2*n_dims;
-  int plaq1 = m_lattice[x][y][z]
-      *m_lattice[x][y][z+2]
-      *m_lattice[x][y+1][z+1]
-      *m_lattice[x][y-1][z+1];
+  //iterate across each site, and update the plaquettes
+  for (int x = 0; x < N; x++){
+  for (int y = 0; y < N; y++){
+  for (int z = 0; z < N; z++){
+  for (int orientation = 0; orientation < n_dims; orientation++){
+    //Work with the 2Nx2Nx2N index.
+    int indices_2d[3] = {2*x,2*y,2*z};
 
-  
+    //For each orientation, pick a forward-permuted direction in the set {x,y,z}.
+    //This covers all the positive plaquettes at a given site.
+    int span_dir = (orientation + 1) % 3;
 
-  //int plaq2 =
-  //for (int i = 0; i < n_nbs; i++){
-    //product *= m_lattice[
-  //}
+    //These are the indices for the spins on the plaquette
+    int* plaq_idx[4];
+    plaq_idx[0] = indices_2d;
+    plaq_idx[0][orientation] = (plaq_idx[0][orientation] + 1) % N;
+    plaq_idx[1] = indices_2d;
+    plaq_idx[1][span_dir] = (plaq_idx[1][span_dir]+1) % N;
+    plaq_idx[1][orientation] = (plaq_idx[1][orientation] + 2) % N;
+    plaq_idx[2] = indices_2d;
+    plaq_idx[2][span_dir] = (plaq_idx[2][span_dir] + 2) % N;
+    plaq_idx[3] = indices_2d;
+    plaq_idx[3][span_dir] = (plaq_idx[3][span_dir] + 1) % N;
 
-
-}
-void WegnerMC::update_plaqs(int orientation, int x, int y, int z){
-  //Given the spin site, update all neighbouring plaquettes.
-  //(*m_plaqs[0])(idx) = 
-  //int product = 1;
-  //int n_nbs = 2*n_dims;
-  
-  //iterate over nbs_plaqs
-  
-  //STEPS:
-  //1. access an fc site by picking a direction perpendicular to the variable direction
-  //2. from the fc site, step out in all directions in the plane spanned by "direction"
-  //    and fc direction.
-  //3. Repeat for other directions perpendicular to "direction"
-
-  //for (int i = 0; i < n_nbs; i++){
-    //product *= m_spins[direction]
-  
-  //Using the direction, figure out the relative coordinates of the fc faces.
-  for (int dir = 0; dir < n_dims; dir++){
-
-    if (dir == orientation){
-      continue;
+    //Get the spins on the plaquette
+    int spins[4];
+    for (int i = 0; i < 4; i++){
+      boost::array<array_3t::index,3> id = {*plaq_idx[i]};
+      spins[i] = m_lattice(id);
     }
 
+    //Update
+    int normal = (span_dir + 1) % 3;
+    m_plaqs[normal][x][y][z] = spins[0]*spins[1]*spins[2]*spins[3];
 
-  }
+    if (x == 20 and y == 0 and z == 0 and orientation == 2){
+      std::cout << "hey0" << std::endl;
+    }
+    //std::cout << x << " " << y << " " << z << " " << orientation << std::endl;
+  }//orientation
+  }//z
+  }//y
+  }//x
+}//update_plaqs
 
+////TODO: INCOMPLETE. Complete this version for local updates later if needed.
+////TODO: need to add in the negative plaquettes as well as PBC
+//void WegnerMC::update_plaqs(int orientation, int x, int y, int z){
+  ////iterate across each site, and also the spin on each site
     
-    //positive direction
-    int fc1[3] = {x+1, y, z};
-    int fc2[3] = {x, y, z};
-   
-    //negative direction
-  
-  //Convert to lattice index.
-  //Then just shift from these fcs to get the neighbouring spins!
-  
-}
+    ////Get the 2Nx2Nx2N index.
+    //int indices_2d[3] = {2*x,2*y,2*z};
+    //indices_2d[orientation] += 1;
+
+    ////There are plaquettes with normals facing in every direction except orientation.
+    //for (int normal = 0; normal < n_dims; normal++){
+
+      ////Plaquettes' normals do not coincide with orientation of the spin site. 
+      //if (normal == orientation){
+        //continue;
+      //}
+
+      ////Take a cross product to acquire "dir", which spans the plaq with "orientation"
+      //int dir;
+      //for (int i = 0; i < n_dims; i++){
+        //if (normal != i and orientation != i)
+          //{ dir = i;}
+      //}
+
+      ////These are the indices for the spins on the plaquette
+      //int* plaq_idx[4];
+      //plaq_idx[0] = indices_2d;
+      //plaq_idx[1] = indices_2d;
+      //plaq_idx[1][dir] += 1;
+      //plaq_idx[1][orientation] += 1;
+      //plaq_idx[2] = indices_2d;
+      //plaq_idx[2][dir] += 2;
+      //plaq_idx[3] = indices_2d;
+      //plaq_idx[3][dir] += 1;
+      //plaq_idx[3][orientation] -= 1;
+
+      ////Get the spins on the plaquette
+      //int spins[4];
+      //for (int i = 0; i < 4; i++){
+        //boost::array<array_3t::index,3> id = {*plaq_idx[i]};
+        //spins[i] = m_lattice(id);
+      //}
+
+      ////Update
+      //m_plaqs[normal][x][y][z] = spins[0]*spins[1]*spins[2]*spins[3];
+
+      //if (x == 20 and y == 0 and z == 0 and orientation == 2){
+        //std::cout << "hey0" << std::endl;
+      ////std::cout << x << " " << y << " " << z << " " << orientation << std::endl;
+  //}
+  //}//orientation
+  //}//z
+  //}//y
+  //}//x
+//}//update_plaqs
+
 
 //template <int n_dims>
 //void WegnerMC<n_dims>::Initialize(double T_high){
@@ -291,58 +309,5 @@ void WegnerMC::evolve(double T, int steps){
   //User must choose observables from a list that will be output.
 }
 
-//void convert_index(){
-  //// change between 1d and 3d index using mod.
-  //// is this necessary?
-//}
 
-
-//int main() {
-
-	//cout << "!!!Hello World!!!" << endl; 
-  ////WegnerMC<3> sim(10,0.1);
-
-	//return 0;
-//}
-
-
-//typedef boost::multi_array<int, 3> array_3t;
-
-//TODO: wrap into class later?
-//TODO: later generalize to templated array without dimension defined.
-//Subview functions for accessing the data structure
-
-//typedef array_nt::array_view<3> subView;
-//
-//class WegnerData{
-//private:
-//public:
-//  array_nt m_lattice;
-//  subViiew m_edges;
-//  subViiew m_sites;
-//  subViiew m_fc;
-//  subViiew m_bc;
-//
-//  WegnerData(int N){
-//    //Allocate space.
-//    m_lattice.resize(boost::extents[2*N][2*N][2*N]);
-//
-//    //Create the subviews.
-////
-//// array_view dims:
-//// [base,stride,bound)
-//// [0,1,2), [1,1,3), [0,2,4)
-////
-//
-////  typedef array_3t::index_range range;
-////  m_edges = array_3t[boost::indices[range(0,2)][range(1,3)][range(0,4,2)]];
-////
-////  for (array::index i = 0; i != 2; ++i)
-////    for (array::index j = 0; j != 2; ++j)
-////      for (array::index k = 0; k != 2; ++k)
-////        assert(myview[i][j][k] == myarray[i][j+1][k*2]);
-//
-//  }
-
-//};
 #endif  /*WEGNER_MC_H_*/
