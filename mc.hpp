@@ -35,7 +35,7 @@ class WegnerMC{
     //array_1t m_spin_to_plaqs;
     //array_1t m_plaq_to_spins;
 
-    double m_Th; //= 100;
+    double m_Ti; //T_initial
     double m_E0; //g.s energy
     double m_e;
 
@@ -57,8 +57,9 @@ class WegnerMC{
     WegnerMC(double e);
     ~WegnerMC();
     void initialize(double T_high);
-    void evolve(double T, int steps);
-    void set_T_high(double Th){m_Th = Th;};
+    void evolve(double Tf, int steps);
+    void set_T_high(double Ti){m_Ti = Ti;};
+    void set_e(double e){m_e = e;};
 
     bool flag_plaq = 1; //Spin flips will locally update plaquette products
 };
@@ -69,7 +70,6 @@ class WegnerMC{
 /*
  * IMPLEMENTATION
  */
-
 
 
 /*
@@ -158,6 +158,12 @@ double WegnerMC::calc_wilson(){
   return wilson;
 }
 
+void WegnerMC::evolve(double Tf, int steps){
+  //Perform standard MC
+  //Alter the data structure
+  //Save all the data
+  //User must choose observables from a list that will be output.
+}
 
 //Convert 3D coordinates to 1D list index
 double WegnerMC::index_flatten(int x, int y, int z){
@@ -168,6 +174,12 @@ double WegnerMC::index_flatten(int x, int y, int z){
 std::vector<int> WegnerMC::index_unflatten(int id){
   std::vector<int> a;
   return a;
+}
+
+void WegnerMC::initialize(double T_high){
+  //Get random configuration
+
+  //Evolve until equilibrated
 }
 
 void WegnerMC::update_plaqs(){
@@ -214,18 +226,5 @@ void WegnerMC::update_plaqs(){
   }//y
   }//x
 }//update_plaqs
-
-void WegnerMC::initialize(double T_high){
-  //Get random configuration
-
-  //Evolve until equilibrated
-}
-
-void WegnerMC::evolve(double T, int steps){
-  //Perform standard MC
-  //Alter the data structure
-  //Save all the data
-  //User must choose observables from a list that will be output.
-}
 
 #endif  /*WEGNER_MC_H_*/

@@ -4,16 +4,14 @@
 
 using namespace std;
 
-int main(){
-  //TODO: Put an argument if-then structure here eventually to choose scripts.
-  cv()
-  return 0;
-}
-
-
 //Calculate the heat capacity for a variety of parameters.
-int cv(){
+void cv(){
   WegnerMC sim = WegnerMC(0.2);
  
 }
 
+int main(){
+  //TODO: Put an argument if-then structure here eventually to choose scripts.
+  cv();
+  return 0;
+}
