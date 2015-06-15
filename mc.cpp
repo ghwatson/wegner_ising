@@ -24,49 +24,33 @@ WegnerMC::WegnerMC(double e, double T){
   m_spins[0] = new view_3t(m_lattice[ boost::indices[odds][evens][evens] ]);
   m_spins[1] = new view_3t(m_lattice[ boost::indices[evens][odds][evens] ]);
   m_spins[2] = new view_3t(m_lattice[ boost::indices[evens][evens][odds] ]);
-  m_test[0] = new view_3t(m_lattice[ boost::indices[odds][evens][evens] ]);
 
   //Store the disorder values on the plaquettes ( [normal][x][y][z] where x,y,z < N )
   m_disorders[0] = new view_3t(m_lattice[ boost::indices[evens][odds][odds] ]);
   m_disorders[1] = new view_3t(m_lattice[ boost::indices[odds][evens][odds] ]);
   m_disorders[2] = new view_3t(m_lattice[ boost::indices[odds][odds][evens] ]);
 
-  m_plaqs[0].resize( boost::extents[2*L][2*L][2*L]);
-  m_plaqs[1].resize( boost::extents[2*L][2*L][2*L]);
-  m_plaqs[2].resize( boost::extents[2*L][2*L][2*L]);
-
   //Initialize to ground state (all spins = 1)
-  std::fill(m_spins[0]->origin(), m_spins[0]->origin() + m_spins[0]->num_elements(), 3);
-  std::fill(m_spins[1]->origin(), m_spins[1]->origin() + m_spins[1]->num_elements(), 3);
-  std::fill(m_spins[2]->origin(), m_spins[2]->origin() + m_spins[2]->num_elements(), 3);
-  //std::fill(m_test[0]->origin(), m_test[0]->origin() + m_test[0]->num_elements(), 333);
-  std::cout << m_spins[0]->num_elements() << std::endl;
-  std::cout << (*m_spins[1])[1][2][3] << std::endl;
-  std::cout << (*m_test[0])[0][0][0] << std::endl;
+  //TODO: figure out how to iterate subarrays (one-liner)
+  for (int orient = 0; orient < n_dims; orient++)
+    for (int i = 0; i < (int) m_spins[orient]->shape()[0];i++)
+      for (int j = 0; j < (int) m_spins[orient]->shape()[1];j++)
+        for (int k = 0; k < (int) m_spins[orient]->shape()[2];k++)
+          (*m_spins[orient])[i][j][k] = 1;
 
   //Initialize plaquette disorders (randomly +/- 1, strength specified in e)
-  for (int normal = 0 ; normal < n_dims; normal++){
-    std::fill(
-        m_disorders[normal]->origin(),
-        m_disorders[normal]->origin() + m_disorders[normal]->num_elements(),
-        (m_rgen.rand()>=0.5) ? +1 : -1);
-  }
+  for (int normal= 0; normal < n_dims; normal++)
+    for (int i = 0; i < (int) m_disorders[normal]->shape()[0];i++)
+      for (int j = 0; j < (int) m_disorders[normal]->shape()[1];j++)
+        for (int k = 0; k < (int) m_disorders[normal]->shape()[2];k++)
+          (*m_disorders[normal])[i][j][k] = ( (m_rgen.rand()>=0.5) ? +1 : -1 );
   
   //Initialize the plaquette products
-  update_plaqs();
+  array_3t plaqs = calc_plaqs();
 
   //Get g.s. energy for future reference
-  m_E0 = calc_E();
+  m_E0 = calc_E(plaqs);
 
-
-  //TODO: DEBUG
-  std::cout << "test value is: " << std::endl;
-  (*m_spins[2])[0][0][0] = 23;
-  std::cout << (*m_spins[2])[0][0][0] << std::endl;
-  std::cout << (*m_spins[2])[0][1][2] << std::endl;
-  std::cout << (m_spins[2]->origin()) << std::endl;
-  std::cout << (m_lattice)[0][1][2] << std::endl;
-  
 }//WegnerMC
 
 WegnerMC::~WegnerMC(){
@@ -80,7 +64,7 @@ WegnerMC::~WegnerMC(){
 
 // MEMBER FUNS ----------
 
-double WegnerMC::calc_E(){
+double WegnerMC::calc_E(array_3t plaqs){
   // Sum the terms in the Hamiltonian
   double E = 0;
 
@@ -243,7 +227,11 @@ void WegnerMC::initialize(double T_high){
   equilibrate(steps);
 }
 
-void WegnerMC::update_plaqs(){
+array_3t WegnerMC::calc_plaqs(){
+  array_3t plaqs[3];
+  plaqs[0].resize( boost::extents[2*L][2*L][2*L]);
+  plaqs[1].resize( boost::extents[2*L][2*L][2*L]);
+  plaqs[2].resize( boost::extents[2*L][2*L][2*L]);
   //iterate across each site, and update the plaquettes
   for (int x = 0; x < L; x++){
   for (int y = 0; y < L; y++){
@@ -276,7 +264,7 @@ void WegnerMC::update_plaqs(){
 
     //Update
     int normal = (span_dir + 1) % 3;
-    m_plaqs[normal][x][y][z] = spins[0]*spins[1]*spins[2]*spins[3];
+    plaqs[normal][x][y][z] = spins[0]*spins[1]*spins[2]*spins[3];
 
     //Cleanup
     delete[] plaq_idx[0];
@@ -284,9 +272,9 @@ void WegnerMC::update_plaqs(){
     delete[] plaq_idx[2];
     delete[] plaq_idx[3];
 
-    //delete[] plaq_idx;
   }//orientation
   }//z
   }//y
   }//x
+  return plaqs;
 }//update_plaqs

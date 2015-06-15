@@ -25,26 +25,24 @@ class WegnerMC{
     
     MTRand m_rgen = MTRand();
     array_3t m_lattice;
-    array_3t m_plaqs[3]; //plaquette products
     
     //Provides an alternative way to access values via NxNxN site indices.
     view_3t* m_disorders[3]; //[normal][x][y][z] where x,y,z is incident site.
     view_3t* m_spins[3];  //[orientation][x][y][z]
-    view_3t* m_test[3];
 
     double m_T; //T_initial
     double m_E0; //g.s energy
     double m_e; //disorder amount (will be +-m_e)
 
-    //TODO: Change structure to utilize local updates to get dE.
-    double calc_E();
+    //TODO: consider refactoring to have plaqs as a class member.
+    double calc_E(array_3t plaqs);
     double calc_plaq(int normal, int x, int y, int z);
     double calc_dE(int orientation, int x, int y, int z);
     double calc_Eflucs();
     double calc_Cv();
     double calc_wilson();
 
-    void update_plaqs();
+    array_3t calc_plaqs();
  
   public:
     WegnerMC(double e, double T);
