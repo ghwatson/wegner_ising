@@ -74,9 +74,9 @@ WegnerMC::~WegnerMC(){
   
   
   
-void WegnerMC::evolve(double Tf, double dT){
-  //Perform standard MC
-  //get num_steps
+void WegnerMC::evolve(double Tf, int steps){
+  //From steps, get dT
+  double dT = fabs(m_T - Tf) / steps;
   
   for (m_T = fabs(m_T - Tf); m_T < 0; m_T-=dT){
     //pick a random spin.
@@ -131,7 +131,20 @@ double WegnerMC::calc_E(){
   // Sum the terms in the Hamiltonian
   double E = 0;
 
-  
+  //update plaquettes
+  update_plaqs();
+
+  //sum all the plaquettes with their appropriate disorders.
+  for (int orient = 0; orient < n_dims; orient++){
+    for (int i = 0; i < L; i++){
+      for (int j = 0; j < L;j++){
+        for (int k = 0; k < L;k++){
+          double ep = m_e*(*m_disorders[orient])[i][j][k];
+          E -= (1 + ep)*m_plaqs[orient][i][j][k];
+        }
+      }
+    }
+  }
   return E;
 }
 //TODO: consider combinining this with evolve to enable the ability to
@@ -201,15 +214,32 @@ double WegnerMC::calc_Eflucs(){
   double Eflucs = 0;
   return Eflucs;
 }
-double WegnerMC::calc_Cv(){
-  //stuff
-  double Cv = 0;
-  return Cv;
-}
 double WegnerMC::calc_wilson(){
   //Calculate wilson loop.
   double wilson = 0;
   return wilson;
+}
+double WegnerMC::meas_Cv(int MCsteps){
+  //for each MC step
+  
+  double E = 0;
+  double Esq = 0;
+  for ( int MCstep = 0; MCstep < MCsteps; MCstep++){
+    //equilibrate at current temp
+    //pass to the equilibrator the functional kernel that will gather data
+    //get the data back
+   
+    E += calc_E();
+
+  }
+  //calculate E, E^2
+  //after steps, divide by num_steps
+  //square <E>
+  //calc Cv
+  
+  
+  double Cv = 0;
+  return Cv;
 }
 
 void WegnerMC::update_plaqs(){

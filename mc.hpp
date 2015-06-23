@@ -41,9 +41,9 @@ class WegnerMC{
     //void calc_plaq(int normal, int x, int y, int z);
     double calc_dE(int orientation, int x, int y, int z);
     double calc_Eflucs();
-    double calc_Cv();
     double calc_wilson();
 
+    double meas_Cv(int MCsteps);
     
     void update_plaqs();
 
@@ -52,7 +52,7 @@ class WegnerMC{
     ~WegnerMC();
     void initialize(double T_high);
     void equilibrate(int steps);
-    void evolve(double Tf, double dT);
+    void evolve(double Tf, int steps);
     void set_T(double T){m_T = T;};
     void set_e(double e){m_e = e;};
 };
