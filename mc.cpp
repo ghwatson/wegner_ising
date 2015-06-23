@@ -1,7 +1,6 @@
 
 #include <mc.hpp>
 #include <math.h>
-
 /*
  * bc -> unused OOO
  * sites -> unused EEE
@@ -16,6 +15,11 @@ WegnerMC::WegnerMC(double e, double T){
 
   //Allocate data structure.
   m_lattice.resize(boost::extents[2*L][2*L][2*L]);
+
+
+  m_plaqs[0].resize( boost::extents[L][L][L]);
+  m_plaqs[1].resize( boost::extents[L][L][L]);
+  m_plaqs[2].resize( boost::extents[L][L][L]);
 
   range evens = range(0,2*L,2);
   range odds = range(1,2*L,2);
@@ -44,12 +48,12 @@ WegnerMC::WegnerMC(double e, double T){
       for (int j = 0; j < (int) m_disorders[normal]->shape()[1];j++)
         for (int k = 0; k < (int) m_disorders[normal]->shape()[2];k++)
           (*m_disorders[normal])[i][j][k] = ( (m_rgen.rand()>=0.5) ? +1 : -1 );
-  
+
   //Initialize the plaquette products
-  array_3t plaqs = calc_plaqs();
+  update_plaqs();
 
   //Get g.s. energy for future reference
-  m_E0 = calc_E(plaqs);
+  m_E0 = calc_E();
 
 }//WegnerMC
 
@@ -59,12 +63,71 @@ WegnerMC::~WegnerMC(){
     //delete[] m_disorders[i];
     //delete[] m_spins[i];
   }
-  std::cout << "balls" << std::endl;
 }
 
-// MEMBER FUNS ----------
 
-double WegnerMC::calc_E(array_3t plaqs){
+
+
+// PUBLIC FUNCTIONS
+   
+  
+  
+  
+  
+void WegnerMC::evolve(double Tf, double dT){
+  //Perform standard MC
+  //get num_steps
+  
+  for (m_T = fabs(m_T - Tf); m_T < 0; m_T-=dT){
+    //pick a random spin.
+    //random coordinates and orientation
+    int orientation = m_rgen.randInt(2);
+    int x = m_rgen.randInt(L);
+    int y = m_rgen.randInt(L);
+    int z = m_rgen.randInt(L);
+
+    double expdelta = calc_dE(orientation, x, y, z);
+
+    double r = m_rgen.rand();
+
+    if (r > expdelta){
+      int new_val = -(*m_spins[orientation])[x][y][z];
+      (*m_spins[orientation])[x][y][z] = -new_val; //flip the spin
+    }
+  }
+
+}//evolve
+
+void WegnerMC::equilibrate(int steps){
+  //TODO: implement autocorrelation procedure to get this steps
+  evolve(m_T, steps);
+}//equilibrate
+
+void WegnerMC::initialize(double T_high){
+  //Get random configuration
+  for (int orient = 0; orient < n_dims; orient++){
+    std::fill(
+    m_spins[orient]->origin(),
+    m_spins[orient]->origin() + m_spins[orient]->num_elements(),
+    (m_rgen.rand()>=0.5) ? +1 : -1);
+  }
+
+  set_T(T_high);
+  int steps = static_cast<int>(pow(10,4));
+  equilibrate(steps);
+}//initialize
+
+
+
+
+
+// PRIVATE FUNS ----------
+
+
+
+
+
+double WegnerMC::calc_E(){
   // Sum the terms in the Hamiltonian
   double E = 0;
 
@@ -130,7 +193,7 @@ double WegnerMC::calc_dE(int orientation, int x, int y, int z){
   }
   
   return expdelta;
-}
+}//calc_dE
 
 double WegnerMC::calc_Eflucs(){
   //stuff
@@ -149,89 +212,7 @@ double WegnerMC::calc_wilson(){
   return wilson;
 }
 
-void WegnerMC::evolve(double Tf, double dT){
-  //Perform standard MC
-  //get num_steps
-  
-  for (m_T = fabs(m_T - Tf); m_T < 0; m_T-=dT){
-    //pick a random spin.
-    //random coordinates and orientation
-    int orientation = m_rgen.randInt(2);
-    int x = m_rgen.randInt(L);
-    int y = m_rgen.randInt(L);
-    int z = m_rgen.randInt(L);
-
-    double expdelta = calc_dE(orientation, x, y, z);
-
-    double r = m_rgen.rand();
-
-    if (r > expdelta){
-      //int new_val = -(*m_spins[orientation])[x][y][z];
-      //m_spins[orientation][x][y][z] = -new_val; //flip the spin
-    }
-    
-
-    
-
-    
-    
-    
-    
-    //get energy change for that spin
-    //compare boltzmann to random number.
-    //accept/refuse
-    
-    
-    
-    
-    //perform a flip
-    //accept/reject
-    
-  }
-  //for each step, step in config space
-  //lower energy?
-  //if not then accept the change with boltzmann(Tf)
-  //
-  //Alter the data structure
-  //Save all the data
-  //User must choose observables from a list that will be output.
-}
-
-void WegnerMC::equilibrate(int steps){
-  //TODO: implement autocorrelation procedure to get this steps
-  evolve(m_T, steps);
-}
-
-////Convert 3D coordinates to 1D list index
-//double WegnerMC::index_flatten(int x, int y, int z){
-  //return 0;
-//}
-
-////Convert 1D list index to a 3D coordinate
-//std::vector<int> WegnerMC::index_unflatten(int id){
-  //std::vector<int> a;
-  //return a;
-//}
-
-void WegnerMC::initialize(double T_high){
-  //Get random configuration
-  for (int orient = 0; orient < n_dims; orient++){
-    std::fill(
-    m_spins[orient]->origin(),
-    m_spins[orient]->origin() + m_spins[orient]->num_elements(),
-    (m_rgen.rand()>=0.5) ? +1 : -1);
-  }
-
-  set_T(T_high);
-  int steps = static_cast<int>(pow(10,4));
-  equilibrate(steps);
-}
-
-array_3t WegnerMC::calc_plaqs(){
-  array_3t plaqs[3];
-  plaqs[0].resize( boost::extents[2*L][2*L][2*L]);
-  plaqs[1].resize( boost::extents[2*L][2*L][2*L]);
-  plaqs[2].resize( boost::extents[2*L][2*L][2*L]);
+void WegnerMC::update_plaqs(){
   //iterate across each site, and update the plaquettes
   for (int x = 0; x < L; x++){
   for (int y = 0; y < L; y++){
@@ -264,7 +245,9 @@ array_3t WegnerMC::calc_plaqs(){
 
     //Update
     int normal = (span_dir + 1) % 3;
-    plaqs[normal][x][y][z] = spins[0]*spins[1]*spins[2]*spins[3];
+    //plaqs[normal][x][y][z] = spins[0]*spins[1]*spins[2]*spins[3];
+    m_plaqs[normal][x][y][z] = spins[0]*spins[1]*spins[2]*spins[3];
+   
 
     //Cleanup
     delete[] plaq_idx[0];
@@ -276,5 +259,4 @@ array_3t WegnerMC::calc_plaqs(){
   }//z
   }//y
   }//x
-  return plaqs;
 }//update_plaqs
