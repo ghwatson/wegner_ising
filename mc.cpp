@@ -60,8 +60,8 @@ WegnerMC::WegnerMC(double e, double T){
 WegnerMC::~WegnerMC(){
   //deallocate dynamically assigned memory.
   for (int i = 0; i < n_dims; i++){
-    //delete[] m_disorders[i];
-    //delete[] m_spins[i];
+    delete m_disorders[i];
+    delete m_spins[i];
   }
 }
 
@@ -74,28 +74,38 @@ WegnerMC::~WegnerMC(){
   
   
   
-void WegnerMC::evolve(double Tf, int steps){
-  //From steps, get dT
-  double dT = fabs(m_T - Tf) / steps;
-  
-  for (m_T = fabs(m_T - Tf); m_T < 0; m_T-=dT){
-    //pick a random spin.
-    //random coordinates and orientation
-    int orientation = m_rgen.randInt(2);
-    int x = m_rgen.randInt(L);
-    int y = m_rgen.randInt(L);
-    int z = m_rgen.randInt(L);
+void WegnerMC::evolve(double T, int mc_steps){
+  //do MC steps
+  for (int mc = 0; mc < mc_steps; mc++){
+    //do 3N^3 updates (=number of spins)
+    for (int updates = 0; updates < 3*L*L*L; updates++){
+      //pick a random spin.
+      //random coordinates and orientation
+      int orientation = m_rgen.randInt(2);
+      int x = m_rgen.randInt(L);
+      int y = m_rgen.randInt(L);
+      int z = m_rgen.randInt(L);
 
-    double expdelta = calc_dE(orientation, x, y, z);
+      double expdelta = calc_dE(orientation, x, y, z, T);
 
-    double r = m_rgen.rand();
+      double r = m_rgen.rand();
 
-    if (r > expdelta){
-      int new_val = -(*m_spins[orientation])[x][y][z];
-      (*m_spins[orientation])[x][y][z] = -new_val; //flip the spin
+      if (r > expdelta){
+        int new_val = -(*m_spins[orientation])[x][y][z];
+        (*m_spins[orientation])[x][y][z] = -new_val; //flip the spin
+      }
     }
-  }
+    //TODO: measurement kernel here
+    //the kernel is a function which takes in a list of functions.
+    //the user should pass in pointers to the functions.
+    
+    //to measure Cv, calc E, E^2, and sum. after all loops done, div by N.
+    
 
+    
+  }
+  //update m_T
+  m_T = T;
 }//evolve
 
 void WegnerMC::equilibrate(int steps){
@@ -105,18 +115,18 @@ void WegnerMC::equilibrate(int steps){
 
 void WegnerMC::initialize(double T_high){
   //Get random configuration
-  for (int orient = 0; orient < n_dims; orient++){
-    std::fill(
-    m_spins[orient]->origin(),
-    m_spins[orient]->origin() + m_spins[orient]->num_elements(),
-    (m_rgen.rand()>=0.5) ? +1 : -1);
-  }
-
+  for (int orient = 0; orient < n_dims; orient++)
+    for (int i = 0; i < (int) m_disorders[orient]->shape()[0];i++)
+      for (int j = 0; j < (int) m_disorders[orient]->shape()[1];j++)
+        for (int k = 0; k < (int) m_disorders[orient]->shape()[2];k++)
+          (*m_spins[orient])[i][j][k] = ( (m_rgen.rand()>=0.5) ? +1 : -1 );
+  
   set_T(T_high);
   int steps = static_cast<int>(pow(10,4));
+  //TODO: remove this
+  steps = 20;
   equilibrate(steps);
 }//initialize
-
 
 
 
@@ -147,50 +157,48 @@ double WegnerMC::calc_E(){
   }
   return E;
 }
-//TODO: consider combinining this with evolve to enable the ability to
-//perform local plaquette value updates after acceptance of a MC step.
-//or pass the computed plaquette data out to the evolver.
-double WegnerMC::calc_dE(int orientation, int x, int y, int z){
+
+double WegnerMC::calc_dE(int orientation, int x, int y, int z, int T){
   double expdelta;
   double E0 = 0;
   
   //loop over incident plaquettes by picking out vectors orthogonal to orientation
   for (int span_dir((orientation + 1) % 3); span_dir != orientation; span_dir = (span_dir + 1) % 3){
 
-    //Positive plaquette spanned by orientation and span_dir.
-    int* plaq_idx[4];
-    plaq_idx[0] = new int[3] {2*x, 2*y, 2*z};
-    plaq_idx[0][orientation] = (plaq_idx[0][orientation] + 1) % L;
-    plaq_idx[1] = new int[3] {2*x, 2*y, 2*z};
-    plaq_idx[1][span_dir] = (plaq_idx[1][span_dir]+1) % L;
-    plaq_idx[1][orientation] = (plaq_idx[1][orientation] + 2) % L;
-    plaq_idx[2] = new int[3] {2*x, 2*y, 2*z};
-    plaq_idx[2][span_dir] = (plaq_idx[2][span_dir] + 2) % L;
-    plaq_idx[3] = new int[3] {2*x, 2*y, 2*z};
-    plaq_idx[3][span_dir] = (plaq_idx[3][span_dir] + 1) % L;
+    //Plaquette spanned by orientation and span_dir
+    int* spins = get_plaq_spins(orientation,span_dir,x,y,z);
 
+    //Get the disorder term.
     int d_id[3] = {2*x, 2*y, 2*z};
     d_id[orientation] = (d_id[orientation] + 1) % L;
     d_id[span_dir] = (d_id[span_dir]+1) % L;
-
-    //Get the spins on the plaquette
-    int spins[4];
-    for (int i = 0; i < 4; i++){
-      boost::array<array_3t::index,3> id = {*plaq_idx[i]};
-      spins[i] = m_lattice(id);
-    }
-
-    //Get the disorder term.
     boost::array<array_3t::index,3> id = {*d_id};
     double u = m_lattice(id);
 
     E0 += -(1+m_e*u)*spins[0]*spins[1]*spins[2]*spins[3];
+
+    //Repeat for the negative plaquette
+    int neg_site[3] = {x,y,z};
+    neg_site[span_dir] = (L + neg_site[span_dir] - 1) % L;
+
+    //This code is a repeat of the above, but using the negative indices instead
+    //of x,y,z in order to access the appropriate plaquette.
+    int* neg_spins = get_plaq_spins(orientation,span_dir,neg_site[0],neg_site[1],neg_site[2]);
+
+    int neg_d_id[3] = {2*neg_site[0], 2*neg_site[1], 2*neg_site[2]};
+    neg_d_id[orientation] = (neg_d_id[orientation] + 1) % L;
+    neg_d_id[span_dir] = (neg_d_id[span_dir]+1) % L;
+    boost::array<array_3t::index,3> neg_id = {*neg_d_id};
+    double neg_u = m_lattice(neg_id);
+
+    E0 += -(1+m_e*neg_u)*neg_spins[0]*neg_spins[1]*neg_spins[2]*neg_spins[3];
+
   }
 
   double E1 = -E0; //flipping the spin will flip the local energy.
 
   if (m_T >  0){
-    expdelta = exp(-(E1-E0)/m_T);
+    expdelta = exp(-(E1-E0)/T);
   }
   else if (m_T == 0){
     if (E1 < E0){
@@ -208,38 +216,42 @@ double WegnerMC::calc_dE(int orientation, int x, int y, int z){
   return expdelta;
 }//calc_dE
 
-double WegnerMC::calc_Eflucs(){
-  //stuff
-  //<E^2> - <E>^2
-  double Eflucs = 0;
-  return Eflucs;
-}
 double WegnerMC::calc_wilson(){
   //Calculate wilson loop.
   double wilson = 0;
   return wilson;
 }
-double WegnerMC::meas_Cv(int MCsteps){
-  //for each MC step
-  
-  double E = 0;
-  double Esq = 0;
-  for ( int MCstep = 0; MCstep < MCsteps; MCstep++){
-    //equilibrate at current temp
-    //pass to the equilibrator the functional kernel that will gather data
-    //get the data back
-   
-    E += calc_E();
 
-  }
-  //calculate E, E^2
-  //after steps, divide by num_steps
-  //square <E>
-  //calc Cv
-  
-  
-  double Cv = 0;
-  return Cv;
+int* WegnerMC::get_plaq_spins(int orient, int span_dir, int x, int y, int z){
+    //Positive plaquette spanned by orientation and span_dir.
+    int* plaq_idx[4];
+    plaq_idx[0] = new int[3] {2*x, 2*y, 2*z};
+    plaq_idx[0][orient] = (plaq_idx[0][orient] + 1) % L;
+    plaq_idx[1] = new int[3] {2*x, 2*y, 2*z};
+    plaq_idx[1][span_dir] = (plaq_idx[1][span_dir]+1) % L;
+    plaq_idx[1][orient] = (plaq_idx[1][orient] + 2) % L;
+    plaq_idx[2] = new int[3] {2*x, 2*y, 2*z};
+    plaq_idx[2][span_dir] = (plaq_idx[2][span_dir] + 2) % L;
+    plaq_idx[3] = new int[3] {2*x, 2*y, 2*z};
+    plaq_idx[3][span_dir] = (plaq_idx[3][span_dir] + 1) % L;
+
+
+    //Get the spins on the plaquette
+    int spins[4];
+    for (int i = 0; i < 4; i++){
+      boost::array<array_3t::index,3> id = {*plaq_idx[i]};
+      spins[i] = m_lattice(id);
+    }
+
+    //TODO: replace plaq_idx with a multi_array.
+    
+    //Cleanup
+    delete[] plaq_idx[0];
+    delete[] plaq_idx[1];
+    delete[] plaq_idx[2];
+    delete[] plaq_idx[3];
+
+    return spins;
 }
 
 void WegnerMC::update_plaqs(){
@@ -253,38 +265,12 @@ void WegnerMC::update_plaqs(){
     //This covers all the positive plaquettes at a given site.
     int span_dir = (orientation + 1) % 3;
 
-    //These are the indices for the spins on the plaquette
-    
-    int* plaq_idx[4];
-    plaq_idx[0] = new int[3] {2*x, 2*y, 2*z};
-    plaq_idx[0][orientation] = (plaq_idx[0][orientation] + 1) % L;
-    plaq_idx[1] = new int[3] {2*x, 2*y, 2*z};
-    plaq_idx[1][span_dir] = (plaq_idx[1][span_dir]+1) % L;
-    plaq_idx[1][orientation] = (plaq_idx[1][orientation] + 2) % L;
-    plaq_idx[2] = new int[3] {2*x, 2*y, 2*z};
-    plaq_idx[2][span_dir] = (plaq_idx[2][span_dir] + 2) % L;
-    plaq_idx[3] = new int[3] {2*x, 2*y, 2*z};
-    plaq_idx[3][span_dir] = (plaq_idx[3][span_dir] + 1) % L;
-
-    //Get the spins on the plaquette
-    int spins[4];
-    for (int i = 0; i < 4; i++){
-      boost::array<array_3t::index,3> id = {*plaq_idx[i]};
-      spins[i] = m_lattice(id);
-    }
+    int* spins = get_plaq_spins(orientation,span_dir,x,y,z);
 
     //Update
     int normal = (span_dir + 1) % 3;
-    //plaqs[normal][x][y][z] = spins[0]*spins[1]*spins[2]*spins[3];
     m_plaqs[normal][x][y][z] = spins[0]*spins[1]*spins[2]*spins[3];
    
-
-    //Cleanup
-    delete[] plaq_idx[0];
-    delete[] plaq_idx[1];
-    delete[] plaq_idx[2];
-    delete[] plaq_idx[3];
-
   }//orientation
   }//z
   }//y

@@ -14,7 +14,7 @@
 #include <typeinfo>
 
 const int n_dims = 3;
-const int L = 20; //length in plaquettes/number of sites (PBC implies they're the same)
+const int L = 10; //length in plaquettes/number of sites (PBC implies they're the same)
 
 class WegnerMC{
   private:
@@ -33,18 +33,17 @@ class WegnerMC{
     view_3t* m_disorders[3]; //[normal][x][y][z] where x,y,z is incident site.
     view_3t* m_spins[3];  //[orientation][x][y][z]
 
-    double m_T; //T_initial
+    double m_T; //T
     double m_E0; //g.s energy
     double m_e; //disorder amount (will be +-m_e)
 
     double calc_E();
     //void calc_plaq(int normal, int x, int y, int z);
-    double calc_dE(int orientation, int x, int y, int z);
-    double calc_Eflucs();
+    double calc_dE(int orientation, int x, int y, int z, int T);
     double calc_wilson();
 
-    double meas_Cv(int MCsteps);
-    
+    int* get_plaq_spins(int orient, int span_dir, int x, int y, int z);
+
     void update_plaqs();
 
   public:
@@ -52,7 +51,8 @@ class WegnerMC{
     ~WegnerMC();
     void initialize(double T_high);
     void equilibrate(int steps);
-    void evolve(double Tf, int steps);
+    //void evolve(double Tf, int steps, void (*measure)());
+    void evolve(double T, int mc_steps);
     void set_T(double T){m_T = T;};
     void set_e(double e){m_e = e;};
 };

@@ -26,9 +26,9 @@ void cv(){
   //record the (T,Cv,e) value to file
   
   
-  for (double Tf = Tf_start; Tf < Tf_stop; Tf+=step){
+  //for (double Tf = Tf_start; Tf < Tf_stop; Tf+=step){
     sim.initialize(10);
-  }
+  //}
 
 }
 
@@ -43,5 +43,6 @@ void history(){
 int main(){
   //TODO: Put an argument if-then structure here eventually to choose scripts.
   cv();
+  std::cout << "done!" << std::endl;
   return 0;
 }
