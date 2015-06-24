@@ -37,7 +37,6 @@ class WegnerMC{
     double m_E0; //g.s energy
     double m_e; //disorder amount (will be +-m_e)
 
-    double calc_E();
     //void calc_plaq(int normal, int x, int y, int z);
     double calc_dE(int orientation, int x, int y, int z, int T);
     double calc_wilson();
@@ -49,10 +48,12 @@ class WegnerMC{
   public:
     WegnerMC(double e, double T);
     ~WegnerMC();
+    double calc_E();
     void initialize(double T_high);
     void equilibrate(int steps);
     //void evolve(double Tf, int steps, void (*measure)());
     void evolve(double T, int mc_steps);
+    void evolve(double T, int mc_steps, void (*kernel)(WegnerMC*));
     void set_T(double T){m_T = T;};
     void set_e(double e){m_e = e;};
 };

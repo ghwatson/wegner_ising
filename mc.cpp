@@ -74,7 +74,7 @@ WegnerMC::~WegnerMC(){
   
   
   
-void WegnerMC::evolve(double T, int mc_steps){
+void WegnerMC::evolve(double T, int mc_steps, void (*kernel)(WegnerMC*)){
   //do MC steps
   for (int mc = 0; mc < mc_steps; mc++){
     //do 3N^3 updates (=number of spins)
@@ -96,8 +96,9 @@ void WegnerMC::evolve(double T, int mc_steps){
       }
     }
     //TODO: measurement kernel here
-    //the kernel is a function which takes in a list of functions.
+    //the kernel is a function which takes in a list of functions
     //the user should pass in pointers to the functions.
+    kernel(this);
     
     //to measure Cv, calc E, E^2, and sum. after all loops done, div by N.
     
@@ -108,9 +109,12 @@ void WegnerMC::evolve(double T, int mc_steps){
   m_T = T;
 }//evolve
 
+//void null_func(WegnerMC* sim);
 void WegnerMC::equilibrate(int steps){
   //TODO: implement autocorrelation procedure to get this steps
-  evolve(m_T, steps);
+  void null_func(WegnerMC* sim); //TODO: remove this prototype
+  evolve(m_T, steps, null_func);
+  std::cout << "afterwards" << std::endl;
 }//equilibrate
 
 void WegnerMC::initialize(double T_high){
@@ -276,3 +280,12 @@ void WegnerMC::update_plaqs(){
   }//y
   }//x
 }//update_plaqs
+
+
+//Extras
+
+
+
+//TODO:find a cleaner way to implement this null
+  void null_func(WegnerMC* sim){
+  }

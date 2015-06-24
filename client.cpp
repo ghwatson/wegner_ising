@@ -1,6 +1,7 @@
 #include <iostream>
 #include "mc.hpp"
 #include <boost/multi_array.hpp>
+#include <kernel.hpp>
 
 using namespace std;
 
@@ -25,9 +26,14 @@ void cv(){
   //do measure over 10^4 steps
   //record the (T,Cv,e) value to file
   
+  KernelPipe pipe;
+  typedef int (KernelPipe::*fnPtr)(WegnerMC* sim);
+
+  fnPtr myptr = &KernelPipe::measure_Cv_data;
   
   //for (double Tf = Tf_start; Tf < Tf_stop; Tf+=step){
     sim.initialize(10);
+    sim.evolve(10, 15, pipe.measure_Cv_data);
   //}
 
 }
