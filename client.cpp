@@ -22,6 +22,11 @@ void cv(){
   //start the temperature at 10, disorder 0
   WegnerMC sim = WegnerMC(0, 10);
 
+  sim.initialize(10);
+  int val = sim.get_plaq_val(0,0,0,0,0);
+
+  cout << val << endl;
+
   //for a range of Tfinals
   //start at 10
   //equilibrate
@@ -31,15 +36,22 @@ void cv(){
   //do measure over 10^4 steps
   //record the (T,Cv,e) value to file
   
-  KernelPipe pipe();
-  //typedef int (KernelPipe::*fnPtr)(WegnerMC* sim);
+  KernelPipe* pipe = new KernelPipe();
 
-  //fnPtr myptr = KernelPipe::measure_Cv_data;
-  //int (KernelPipe::*myptr)(WegnerMC* sim) = NULL;
+  typedef void (KernelPipe::*kernel_ptr)(WegnerMC* sim); 
+  kernel_ptr kernel = &KernelPipe::measure_Cv_data;
+
   //for (double Tf = Tf_start; Tf < Tf_stop; Tf+=step){
     sim.initialize(10);
-    //sim.evolve(10, 15, pipe, myptr);
+    cout << "--------------------------" << endl;
+  cout << sim.m_lattice[1][1][2] << endl;
+  cout << sim.m_lattice[1][8][16] << endl;
+    cout << "m_e0 is " << sim.m_E0 << endl;
+    cout << "calcE is " << sim.calc_E() <<  endl;
+    //sim.evolve(10, 15, pipe, kernel);
   //}
+  
+  delete pipe;
 
 }
 

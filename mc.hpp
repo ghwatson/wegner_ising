@@ -16,8 +16,7 @@
 const int n_dims = 3;
 const int L = 10; //length in plaquettes/number of sites (PBC implies they're the same)
 
-class KernelPipe; //forward declaration
-//#include <kernel.hpp>
+class KernelPipe; //forward declaration for mutual class defns
 
 class WegnerMC{
   private:
@@ -26,6 +25,7 @@ class WegnerMC{
     typedef boost::multi_array_types::index_range range;
     typedef array_3t::array_view<3>::type view_3t;
     
+  public:
     MTRand m_rgen = MTRand();
     array_3t m_lattice;
     array_3t m_plaqs[3];
@@ -37,18 +37,17 @@ class WegnerMC{
     view_3t* m_spins[3];  //[orientation][x][y][z]
 
     double m_T; //T
-    double m_E0; //g.s energy
     double m_e; //disorder amount (will be +-m_e)
 
     //void calc_plaq(int normal, int x, int y, int z);
     double calc_dE(int orientation, int x, int y, int z, int T);
     double calc_wilson();
 
-    int* get_plaq_spins(int orient, int span_dir, int x, int y, int z);
+    int get_plaq_val(int orient, int span_dir, int x, int y, int z);
 
     void update_plaqs();
 
-  public:
+    double m_E0; //g.s energy
     WegnerMC(double e, double T);
     ~WegnerMC();
     double calc_E();

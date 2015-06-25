@@ -14,8 +14,8 @@
 #ifndef KERNEL_HPP
 #define KERNEL_HPP
 
-class WegnerMC;
-//#include <mc.hpp>
+class WegnerMC; //forward declaration for mutual class defns
+
 #include <boost/multi_array.hpp>
 
 class KernelPipe{
@@ -25,11 +25,17 @@ class KernelPipe{
   public:
     KernelPipe();
 
-    //--------CV kernel + variables
     //various kernels to use within Monte Carlo
+    
+    //--------CV kernel + variables
     void measure_Cv_data(WegnerMC* sim_pt);
     array_2t CvTe_data;
-    double E_sum = 0;
-    double Esq_sum = 0;
+    double E_sum;
+    double Esq_sum;
+
+    //-------Wilson loop kernel
+    
+
+    //-------history kernel
 };
 #endif  /*KERNEL_HPP*/
