@@ -4,8 +4,8 @@
  * Date: 25/05/2015
  */
 
-#ifndef WEGNER_MC_H_
-#define WEGNER_MC_H_
+#ifndef WEGNER_MC_HPP
+#define WEGNER_MC_HPP
 
 #include <boost/multi_array.hpp>
 #include "MersenneTwister.h"
@@ -15,6 +15,9 @@
 
 const int n_dims = 3;
 const int L = 10; //length in plaquettes/number of sites (PBC implies they're the same)
+
+class KernelPipe; //forward declaration
+//#include <kernel.hpp>
 
 class WegnerMC{
   private:
@@ -51,11 +54,10 @@ class WegnerMC{
     double calc_E();
     void initialize(double T_high);
     void equilibrate(int steps);
-    //void evolve(double Tf, int steps, void (*measure)());
+    void evolve(double T, int mc_steps, KernelPipe* pipe, void (KernelPipe::*kernel)(WegnerMC*));
     void evolve(double T, int mc_steps);
-    void evolve(double T, int mc_steps, void (*kernel)(WegnerMC*));
     void set_T(double T){m_T = T;};
     void set_e(double e){m_e = e;};
 };
 
-#endif  /*WEGNER_MC_H_*/
+#endif  /*WEGNER_MC_H*/

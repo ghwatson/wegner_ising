@@ -1,3 +1,8 @@
+/*
+ * File: client.cpp
+ * Author: ghwatson
+ * Date: 25/05/2015
+ */
 #include <iostream>
 #include "mc.hpp"
 #include <boost/multi_array.hpp>
@@ -26,14 +31,14 @@ void cv(){
   //do measure over 10^4 steps
   //record the (T,Cv,e) value to file
   
-  KernelPipe pipe;
-  typedef int (KernelPipe::*fnPtr)(WegnerMC* sim);
+  KernelPipe pipe();
+  //typedef int (KernelPipe::*fnPtr)(WegnerMC* sim);
 
-  fnPtr myptr = &KernelPipe::measure_Cv_data;
-  
+  //fnPtr myptr = KernelPipe::measure_Cv_data;
+  //int (KernelPipe::*myptr)(WegnerMC* sim) = NULL;
   //for (double Tf = Tf_start; Tf < Tf_stop; Tf+=step){
     sim.initialize(10);
-    sim.evolve(10, 15, pipe.measure_Cv_data);
+    //sim.evolve(10, 15, pipe, myptr);
   //}
 
 }

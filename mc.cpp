@@ -1,5 +1,10 @@
-
+/*
+ * File: mc.cpp
+ * Author: ghwatson
+ * Date: 25/05/2015
+ */
 #include <mc.hpp>
+#include <kernel.hpp>
 #include <math.h>
 /*
  * bc -> unused OOO
@@ -74,7 +79,7 @@ WegnerMC::~WegnerMC(){
   
   
   
-void WegnerMC::evolve(double T, int mc_steps, void (*kernel)(WegnerMC*)){
+void WegnerMC::evolve(double T, int mc_steps, KernelPipe* pipe, void (KernelPipe::*kernel)(WegnerMC*)){
   //do MC steps
   for (int mc = 0; mc < mc_steps; mc++){
     //do 3N^3 updates (=number of spins)
@@ -98,7 +103,7 @@ void WegnerMC::evolve(double T, int mc_steps, void (*kernel)(WegnerMC*)){
     //TODO: measurement kernel here
     //the kernel is a function which takes in a list of functions
     //the user should pass in pointers to the functions.
-    kernel(this);
+    (pipe->*kernel)(this);
     
     //to measure Cv, calc E, E^2, and sum. after all loops done, div by N.
     
@@ -109,11 +114,36 @@ void WegnerMC::evolve(double T, int mc_steps, void (*kernel)(WegnerMC*)){
   m_T = T;
 }//evolve
 
+//overloaded to not have a kernel
+void WegnerMC::evolve(double T, int mc_steps){
+  //do MC steps
+  for (int mc = 0; mc < mc_steps; mc++){
+    //do 3N^3 updates (=number of spins)
+    for (int updates = 0; updates < 3*L*L*L; updates++){
+      //pick a random spin.
+      //random coordinates and orientation
+      int orientation = m_rgen.randInt(2);
+      int x = m_rgen.randInt(L);
+      int y = m_rgen.randInt(L);
+      int z = m_rgen.randInt(L);
+
+      double expdelta = calc_dE(orientation, x, y, z, T);
+
+      double r = m_rgen.rand();
+
+      if (r > expdelta){
+        int new_val = -(*m_spins[orientation])[x][y][z];
+        (*m_spins[orientation])[x][y][z] = -new_val; //flip the spin
+      }
+    }
+  }
+  //update m_T
+  m_T = T;
+}//evolve
 //void null_func(WegnerMC* sim);
 void WegnerMC::equilibrate(int steps){
   //TODO: implement autocorrelation procedure to get this steps
-  void null_func(WegnerMC* sim); //TODO: remove this prototype
-  evolve(m_T, steps, null_func);
+  evolve(m_T, steps);
   std::cout << "afterwards" << std::endl;
 }//equilibrate
 
@@ -280,12 +310,3 @@ void WegnerMC::update_plaqs(){
   }//y
   }//x
 }//update_plaqs
-
-
-//Extras
-
-
-
-//TODO:find a cleaner way to implement this null
-  void null_func(WegnerMC* sim){
-  }
