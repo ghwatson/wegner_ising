@@ -53,8 +53,7 @@ WegnerMC::WegnerMC(double e, double T){
     for (int i = 0; i < (int) m_disorders[normal]->shape()[0];i++)
       for (int j = 0; j < (int) m_disorders[normal]->shape()[1];j++)
         for (int k = 0; k < (int) m_disorders[normal]->shape()[2];k++)
-          (*m_disorders[normal])[i][j][k] = -33;//TODO: debugging
-          //(*m_disorders[normal])[i][j][k] = ( (m_rgen.rand()>=0.5) ? +1 : -1 );
+          (*m_disorders[normal])[i][j][k] = ( (m_rgen.rand()>=0.5) ? +1 : -1 );
   
   //Initialize the plaquette products
   update_plaqs();
@@ -102,16 +101,12 @@ void WegnerMC::evolve(double T, int mc_steps, KernelPipe* pipe, void (KernelPipe
         (*m_spins[orientation])[x][y][z] = -new_val; //flip the spin
       }
     }
-    //TODO: measurement kernel here
-    //the kernel is a function which takes in a list of functions
-    //the user should pass in pointers to the functions.
+
+    //kernel (this is where the pipe acts)
     (pipe->*kernel)(this);
-    
-    //to measure Cv, calc E, E^2, and sum. after all loops done, div by N.
-    
   }
   //update m_T
-  m_T = T;
+  set_T(T);
 }//evolve
 
 
@@ -139,7 +134,7 @@ void WegnerMC::evolve(double T, int mc_steps){
     }
   }
   //update m_T
-  m_T = T;
+  set_T(T);
 }//evolve
 
 
@@ -158,9 +153,7 @@ void WegnerMC::initialize(double T_high){
           (*m_spins[orient])[i][j][k] = ( (m_rgen.rand()>=0.5) ? +1 : -1 );
 
   set_T(T_high);
-  int steps = static_cast<int>(pow(10,4));
-  //TODO: remove this
-  steps = 20;
+  int steps = static_cast<int>(pow(10,3));
   equilibrate(steps);
 }//initialize
 

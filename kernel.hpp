@@ -24,6 +24,7 @@ class KernelPipe{
 
   public:
     KernelPipe();
+    void clean_data();
 
     //various kernels to use within Monte Carlo
     

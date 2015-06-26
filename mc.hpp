@@ -25,7 +25,6 @@ class WegnerMC{
     typedef boost::multi_array_types::index_range range;
     typedef array_3t::array_view<3>::type view_3t;
     
-  public:
     MTRand m_rgen = MTRand();
     array_3t m_lattice;
     array_3t m_plaqs[3];
@@ -36,6 +35,7 @@ class WegnerMC{
     view_3t* m_disorders[3]; //[normal][x][y][z] where x,y,z is incident site.
     view_3t* m_spins[3];  //[orientation][x][y][z]
 
+    double m_E0; //g.s energy
     double m_T; //T
     double m_e; //disorder amount (will be +-m_e)
 
@@ -47,7 +47,7 @@ class WegnerMC{
 
     void update_plaqs();
 
-    double m_E0; //g.s energy
+  public:
     WegnerMC(double e, double T);
     ~WegnerMC();
     double calc_E();
