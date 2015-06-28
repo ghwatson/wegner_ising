@@ -35,7 +35,9 @@ class WegnerMC{
     array_3t m_plaqs[3];
 
     //Connectivity information
-    array_6pt m_spin_nbs;    //[orient][x][y][z][4][4]
+    array_6pt m_spin_nbs;    //[orient][x][y][z][plaq_id][spin_id]
+                             //plaq_id is in {0..6} indexed by span_dir
+                             //3..6 are the negative plaquettes
 
     //Provides an alternative way to access values via NxNxN site indices.
     view_3t* m_disorders[3]; //[normal][x][y][z] where x,y,z is incident site.
