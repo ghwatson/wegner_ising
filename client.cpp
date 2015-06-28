@@ -33,9 +33,7 @@ void cv(){
 
 
   //TODO: timing. remove this.
-  std::clock_t c_start = std::clock();
   auto t_start = std::chrono::high_resolution_clock::now();
-  auto t = std::chrono::high_resolution_clock::now();
   double prev_time = -1;
 
   //we study a series of independent quenches (this first loop can be parallelized).
@@ -76,6 +74,7 @@ void cv(){
     }
     cout << "TOTAL: " << total_time << endl;
     cout << "LOOP: " << loop_time << endl;
+    prev_time = total_time;
 
     //Calculating Cv
     int N = 3*L*L*L;

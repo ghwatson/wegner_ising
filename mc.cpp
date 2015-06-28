@@ -6,6 +6,11 @@
 #include <mc.hpp>
 #include <kernel.hpp>
 #include <math.h>
+
+//TODO: remove this.
+#include <chrono>
+#include <ctime>
+#include <thread>
 using namespace std; //TODO: for debugging purposes
 /*
  * bc -> unused OOO
@@ -197,6 +202,7 @@ double WegnerMC::calc_dE(int orientation, int x, int y, int z, int T){
 
     //Plaquette spanned by orientation and span_dir
     int plaq = get_plaq_val(orientation,span_dir,x,y,z);
+    //int plaq = 1;
 
     //Get the disorder term.
     int d_id[3] = {2*x, 2*y, 2*z};
@@ -213,6 +219,7 @@ double WegnerMC::calc_dE(int orientation, int x, int y, int z, int T){
     //This code is a repeat of the above, but using the negative indices instead
     //of x,y,z in order to access the appropriate plaquette.
     int neg_plaq = get_plaq_val(orientation,span_dir,neg_site[0],neg_site[1],neg_site[2]);
+    //int neg_plaq = 1;
 
     int neg_d_id[3] = {2*neg_site[0], 2*neg_site[1], 2*neg_site[2]};
     neg_d_id[orientation] = (neg_d_id[orientation] + 1) % (2*L);
@@ -253,19 +260,17 @@ double WegnerMC::calc_wilson(){
 
 int WegnerMC::get_plaq_val(int orient, int span_dir, int x, int y, int z){
     //Positive plaquette spanned by orientation and span_dir.
-    int* plaq_idx[4];
-    plaq_idx[0] = new int[3] {2*x, 2*y, 2*z};
+    array_2t plaq_idx(boost::extents[4][3]);
+    for (int i = 0; i < 4 ; i++){
+      plaq_idx[i][0] = 2*x;
+      plaq_idx[i][1] = 2*y;
+      plaq_idx[i][2] = 2*z;
+    }
     plaq_idx[0][orient] = (plaq_idx[0][orient] + 1) % (2*L);
-
-    plaq_idx[1] = new int[3] {2*x, 2*y, 2*z};
     plaq_idx[1][span_dir] = (plaq_idx[1][span_dir]+1) % (2*L);
     plaq_idx[1][orient] = (plaq_idx[1][orient] + 2) % (2*L);
-
-    plaq_idx[2] = new int[3] {2*x, 2*y, 2*z};
     plaq_idx[2][span_dir] = (plaq_idx[2][span_dir] + 2) % (2*L);
     plaq_idx[2][orient] = (plaq_idx[2][orient] + 1) % (2*L);
-
-    plaq_idx[3] = new int[3] {2*x, 2*y, 2*z};
     plaq_idx[3][span_dir] = (plaq_idx[3][span_dir] + 1) % (2*L);
 
     //Get the spins on the plaquette
@@ -273,14 +278,6 @@ int WegnerMC::get_plaq_val(int orient, int span_dir, int x, int y, int z){
     for (int i = 0; i < 4; i++){
       plaq *= m_lattice[plaq_idx[i][0]][plaq_idx[i][1]][plaq_idx[i][2]];
     }
-
-    //TODO: replace plaq_idx with a multi_array.
-    
-    //Cleanup
-    delete[] plaq_idx[0];
-    delete[] plaq_idx[1];
-    delete[] plaq_idx[2];
-    delete[] plaq_idx[3];
 
     return plaq;
 }//get_plaq_val

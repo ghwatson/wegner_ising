@@ -21,16 +21,16 @@ class KernelPipe; //forward declaration for mutual class defns
 class WegnerMC{
   private:
     typedef boost::multi_array<int, 3> array_3t;
+    typedef boost::multi_array<int, 2> array_2t;
     typedef boost::multi_array<int, 1> array_1t;
     typedef boost::multi_array_types::index_range range;
     typedef array_3t::array_view<3>::type view_3t;
+    typedef array_2t::array_view<2>::type view_2t;
     
     MTRand m_rgen = MTRand();
     array_3t m_lattice;
     array_3t m_plaqs[3];
 
-    
-    //TODO: replace with 4d arrays to avoid pointy stuff, and * in calling values.
     //Provides an alternative way to access values via NxNxN site indices.
     view_3t* m_disorders[3]; //[normal][x][y][z] where x,y,z is incident site.
     view_3t* m_spins[3];  //[orientation][x][y][z]
