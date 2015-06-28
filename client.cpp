@@ -8,6 +8,11 @@
 #include <boost/multi_array.hpp>
 #include <kernel.hpp>
 
+//TODO: timing. remove this.
+#include <chrono>
+#include <ctime>
+#include <thread>
+
 using namespace std;
 
 //Calculate the heat capacity for a variety of parameters.
@@ -20,25 +25,21 @@ void cv(){
   double step = 0.05;
   double T_i = 10; //start system here for each quench
 
-  //start the temperature at 10, disorder 0
-  WegnerMC sim = WegnerMC(0, 10);
-
-  //for a range of Tfinals
-  //start at 10
-  //equilibrate
-  //for a step of dT towards Tfinal
-  //short eq of 10^2
-  //10^4 eq at Tfinal
-  //do measure over 10^4 steps
-  //record the (T,Cv,e) value to file
-  
+  //create the MC sim and the measurement kernel to insert into sim.
+  WegnerMC sim = WegnerMC(0,T_i);
   KernelPipe* pipe = new KernelPipe();
-
   typedef void (KernelPipe::*kernel_ptr)(WegnerMC* sim); 
   kernel_ptr kernel = &KernelPipe::measure_Cv_data;
 
-  //we study a series of independent quenches (this first loop can be
-  //parallelized).
+
+  //TODO: timing. remove this.
+  std::clock_t c_start = std::clock();
+  auto t_start = std::chrono::high_resolution_clock::now();
+  auto t = std::chrono::high_resolution_clock::now();
+  double prev_time = -1;
+
+  //we study a series of independent quenches (this first loop can be parallelized).
+  //from T_i to Tf.
   for (double Tf = Tf_start; Tf < Tf_stop; Tf+=step){
     
     cout << "initializing to " << T_i << endl;
@@ -52,7 +53,7 @@ void cv(){
       cout << "T is " << T << endl;
     }
 
-    cout << "Done quench. Begin equilibration" << endl;
+    cout << "Done quench to << " << Tf << ". Begin equilibration." << endl;
 
     //Now at Tf
     sim.equilibrate(10*10); //equilibrate at desired temp
@@ -62,6 +63,19 @@ void cv(){
     sim.evolve(Tf, 10*10, pipe, kernel); //collect data at desired temp
 
     cout << "Done measurement. Calc Cv" << endl;
+
+    //TODO: timing. remove this.
+    auto t = std::chrono::high_resolution_clock::now();
+    double total_time = std::chrono::duration<double, std::milli>(t-t_start).count();
+    double loop_time;
+    if (prev_time == -1){
+      loop_time = total_time;
+    }
+    else{
+      loop_time = total_time - prev_time;
+    }
+    cout << "TOTAL: " << total_time << endl;
+    cout << "LOOP: " << loop_time << endl;
 
     //Calculating Cv
     int N = 3*L*L*L;
