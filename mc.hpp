@@ -14,7 +14,7 @@
 #include <typeinfo>
 
 const int n_dims = 3;
-const int L = 10; //length in plaquettes/number of sites (PBC implies they're the same)
+const int L = 6; //length in plaquettes/number of sites (PBC implies they're the same)
 
 class KernelPipe; //forward declaration for mutual class defns
 
@@ -22,6 +22,7 @@ class WegnerMC{
   private:
     typedef boost::multi_array<int*, 6> array_6pt;
     //typedef boost::multi_array<int*, 5> array_5pt;
+    typedef boost::multi_array<int, 4> array_4t;
     typedef boost::multi_array<int, 3> array_3t;
     typedef boost::multi_array<int, 2> array_2t;
     typedef boost::multi_array<int, 1> array_1t;
@@ -32,7 +33,7 @@ class WegnerMC{
     
     MTRand m_rgen = MTRand();
     array_3t m_lattice;
-    array_3t m_plaqs[3];
+    array_4t m_plaqs; //[normal][x][y][z]
 
     //Connectivity information
     array_6pt m_spin_nbs;    //[orient][x][y][z][plaq_id][spin_id]
@@ -47,9 +48,7 @@ class WegnerMC{
     double m_T; //T
     double m_e; //disorder amount (will be +-m_e)
 
-    //void calc_plaq(int normal, int x, int y, int z);
-    double calc_dE(int orientation, int x, int y, int z, int T);
-    double calc_wilson();
+    double calc_dE(int orientation, int x, int y, int z, double T);
 
     int get_plaq_val(int orient, int span_dir, int x, int y, int z);
 
@@ -65,8 +64,8 @@ class WegnerMC{
     void equilibrate(int steps);
     void evolve(double T, int mc_steps, KernelPipe* pipe, void (KernelPipe::*kernel)(WegnerMC*));
     void evolve(double T, int mc_steps);
-    void set_T(double T){m_T = T;};
-    void set_e(double e){m_e = e;};
+    void set_T(double T);
+    void set_e(double e);
 };
 
 #endif  /*WEGNER_MC_H*/

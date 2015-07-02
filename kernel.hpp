@@ -33,6 +33,7 @@ class KernelPipe{
     array_2t CvTe_data;
     double E_sum;
     double Esq_sum;
+    int count;
 
     //-------Wilson loop kernel
     

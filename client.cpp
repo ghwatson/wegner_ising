@@ -20,10 +20,10 @@ void cv(){
 //TODO: is it possible to parallelize cv? or is sequential quenching needed
 // to avoid metastable states?
 
-  double Tf_start = 1; //range of final temperatures
-  double Tf_stop = 2;
-  double step = 0.05;
-  double T_i = 10; //start system here for each quench
+  double Tf_start = 1.; //range of final temperatures
+  double Tf_stop = 2.;
+  double step = 0.1;
+  double T_i = 10.; //start system here for each quench
 
   //create the MC sim and the measurement kernel to insert into sim.
   WegnerMC sim = WegnerMC(0,T_i);
@@ -33,55 +33,61 @@ void cv(){
 
 
   //TODO: timing. remove this.
-  auto t_start = std::chrono::high_resolution_clock::now();
-  double prev_time = -1;
+  //auto t_start = std::chrono::high_resolution_clock::now();
+  //double prev_time = -1;
 
   //we study a series of independent quenches (this first loop can be parallelized).
   //from T_i to Tf.
   for (double Tf = Tf_start; Tf < Tf_stop; Tf+=step){
     
     cout << "initializing to " << T_i << endl;
-    sim.initialize(T_i); //initialize at high temperature
+    sim.initialize(T_i); //initialize to random distribution at high temperature
+    int eq = 10*10*10*10;
+    sim.equilibrate(eq);
 
     //for each quench, we step from T_i to Tf slowly via 100 steps
     cout << "quenching to " << Tf << endl;
     double dT = (T_i - Tf) / 100.;
-    for (double T = T_i; T > Tf; T-=dT){ 
-      sim.evolve(Tf,10*10); //evolve for 10^2
-      cout << "T is " << T << endl;
+    for (double T = T_i; T >= Tf; T-=dT){ 
+      sim.evolve(T,10*10); //evolve for 10^2
+      //cout << "T is " << T << endl;
     }
 
-    cout << "Done quench to << " << Tf << ". Begin equilibration." << endl;
+    cout << "Done quench to " << Tf << ". Begin equilibration." << endl;
 
     //Now at Tf
-    sim.equilibrate(10*10); //equilibrate at desired temp
+    sim.equilibrate(eq); //equilibrate at desired temp
 
     cout << "Done eq. Begin measurement." << endl;
 
-    sim.evolve(Tf, 10*10, pipe, kernel); //collect data at desired temp
+    int mc_steps = 10*10*10*10;
+    sim.evolve(Tf, mc_steps, pipe, kernel); //collect data at desired temp
 
     cout << "Done measurement. Calc Cv" << endl;
 
     //TODO: timing. remove this.
-    auto t = std::chrono::high_resolution_clock::now();
-    double total_time = std::chrono::duration<double, std::milli>(t-t_start).count();
-    double loop_time;
-    if (prev_time == -1){
-      loop_time = total_time;
-    }
-    else{
-      loop_time = total_time - prev_time;
-    }
-    cout << "TOTAL: " << total_time << endl;
-    cout << "LOOP: " << loop_time << endl;
-    prev_time = total_time;
+    //auto t = std::chrono::high_resolution_clock::now();
+    //double total_time = std::chrono::duration<double, std::milli>(t-t_start).count();
+    //double loop_time;
+    //if (prev_time == -1){
+      //loop_time = total_time;
+    //}
+    //else{
+      //loop_time = total_time - prev_time;
+    //}
+    //cout << "TOTAL: " << total_time << endl;
+    //cout << "LOOP: " << loop_time << endl;
+    //prev_time = total_time;
 
     //Calculating Cv
     int N = 3*L*L*L;
-    double Esq_avg = pipe->Esq_sum/100.;
-    double E_avg = pipe->E_sum/100.;
+    double Esq_avg = pipe->Esq_sum/mc_steps;
+    double E_avg = pipe->E_sum/mc_steps;
+    cout << "EAVG is << " << E_avg << endl;
+    cout << "ESQAVG is << " << Esq_avg << endl;
     pipe->clean_data(); //re-initalize E, Esq
     double cv = (Esq_avg - E_avg*E_avg)/(Tf*Tf);
+    //double cv = (Esq_avg - E_avg*E_avg);
     cv = cv / N;
     cout << cv << " " << Tf << endl;
   }

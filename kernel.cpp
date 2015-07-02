@@ -21,7 +21,6 @@ void KernelPipe::measure_Cv_data(WegnerMC* sim_pt){
   double E_config = sim_pt->calc_E();
   E_sum += E_config;
   Esq_sum += E_config*E_config;
-
   //cout << "econfig = " << E_config << endl;
   //std::cout << "E_sum = " << E_sum << std::endl;
   //std::cout << "Esq_sum = " << Esq_sum << std::endl;
