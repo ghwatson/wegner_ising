@@ -14,6 +14,7 @@ using namespace std;
  * edges -> used EEO
  * fc -> used EOO
  */
+
 WegnerMC::WegnerMC(double e, double T){
 
   //Set disorder strength.
@@ -74,15 +75,10 @@ WegnerMC::~WegnerMC(){
   }
 }
 
-
-
-
-// PUBLIC FUNCTIONS
+//---------------------------------------------------------------------------------
+// PUBLIC FUNCTIONS ----------------------------------------------------------------
+//---------------------------------------------------------------------------------
    
-  
-  
-  
-  
 void WegnerMC::evolve(double T, int mc_steps, KernelPipe* pipe, void (KernelPipe::*kernel)(WegnerMC*)){
   //do MC steps
   for (int mc = 0; mc < mc_steps; mc++){
@@ -112,8 +108,6 @@ void WegnerMC::evolve(double T, int mc_steps, KernelPipe* pipe, void (KernelPipe
   set_T(T);
 }//evolve
 
-
-//overloaded to not have a kernel
 void WegnerMC::evolve(double T, int mc_steps){
   //do MC steps
   for (int mc = 0; mc < mc_steps; mc++){
@@ -140,12 +134,10 @@ void WegnerMC::evolve(double T, int mc_steps){
   set_T(T);
 }//evolve
 
-
 void WegnerMC::equilibrate(int steps){
   //TODO: implement autocorrelation procedure to get this steps
   evolve(m_T, steps);
 }//equilibrate
-
 
 void WegnerMC::initialize(double T_high){
   //Get random configuration
@@ -158,18 +150,22 @@ void WegnerMC::initialize(double T_high){
   set_T(T_high);
 }//initialize
 
+int WegnerMC::get_plaq_val(int orient, int span_dir, int x, int y, int z){
+    int plaq = 1;
+    //iterate over span directions
+    for (int i = 0; i < 4; i++){
+      plaq *= *m_spin_nbs[orient][x][y][z][span_dir][i];
+    }
+    return plaq;
+}//get_plaq_val
+
 void WegnerMC::set_T(double T){m_T = T;}
+
 void WegnerMC::set_e(double e){m_e = e;}
 
-
-
-
-
-// PRIVATE FUNS ----------
-
-
-
-
+//---------------------------------------------------------------------------------
+// PRIVATE FUNCTIONS -----------------------------------------------------------
+//---------------------------------------------------------------------------------
 
 double WegnerMC::calc_E(){
   // Sum the terms in the Hamiltonian
@@ -191,7 +187,6 @@ double WegnerMC::calc_E(){
   }
   return E;
 }//calc_E
-
 
 double WegnerMC::calc_dE(int orientation, int x, int y, int z, double T){
   double expdelta;
@@ -247,16 +242,6 @@ double WegnerMC::calc_dE(int orientation, int x, int y, int z, double T){
   }
   return expdelta;
 }//calc_dE
-
-
-int WegnerMC::get_plaq_val(int orient, int span_dir, int x, int y, int z){
-    int plaq = 1;
-    //iterate over span directions
-    for (int i = 0; i < 4; i++){
-      plaq *= *m_spin_nbs[orient][x][y][z][span_dir][i];
-    }
-    return plaq;
-}//get_plaq_val
 
 void WegnerMC::setup_connections(){
 
@@ -316,7 +301,6 @@ void WegnerMC::setup_connections(){
   }
   }
 }//setup_connections
-
 
 void WegnerMC::update_plaqs(){
   //iterate across each site, and update the plaquettes

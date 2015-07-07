@@ -49,11 +49,7 @@ class WegnerMC{
     double m_e; //disorder amount (will be +-m_e)
 
     double calc_dE(int orientation, int x, int y, int z, double T);
-
-    int get_plaq_val(int orient, int span_dir, int x, int y, int z);
-
     void setup_connections();
-
     void update_plaqs();
 
   public:
@@ -64,6 +60,7 @@ class WegnerMC{
     void equilibrate(int steps);
     void evolve(double T, int mc_steps, KernelPipe* pipe, void (KernelPipe::*kernel)(WegnerMC*));
     void evolve(double T, int mc_steps);
+    int get_plaq_val(int orient, int span_dir, int x, int y, int z);
     void set_T(double T);
     void set_e(double e);
 };

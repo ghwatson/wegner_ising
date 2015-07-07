@@ -33,9 +33,12 @@ class KernelPipe{
     array_2t CvTe_data;
     double E_sum;
     double Esq_sum;
-    int count;
 
     //-------Wilson loop kernel
+    void measure_wilson_data(WegnerMC* sim_pt);
+    int wilson_sum;
+    array_2t wilson_data;
+    int wilson_L; //TODO: could replace this with partial functions
     
 
     //-------history kernel
