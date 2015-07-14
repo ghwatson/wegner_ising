@@ -37,7 +37,9 @@ int cv(){
   double e_f = 0.5;
   double step_e = 0.1;
 
-  ofstream fout("cv.txt",ios::out);
+  //ofstream fout("cv.txt",ios::out);
+  ofstream fout;
+  fout.open("cv.txt",ios::out);
   if (!fout){
     cout << "Failed to open stream." << endl;
     return EXIT_FAILURE;
@@ -106,7 +108,9 @@ int job_cv(double e,double Tf){
   ss << std::fixed << std::setprecision(5);
   ss << "outputdata/e_" << e << "_T_" << Tf << ".txt";
   std::string file_name = ss.str();
-  ofstream fout(file_name, ios::out);
+  //ofstream fout(file_name, ios::out);
+  ofstream fout;
+  fout.open(file_name.c_str(), ios::out);
   if (!fout){
     cout << "Failed to open stream." << endl;
     return EXIT_FAILURE;
