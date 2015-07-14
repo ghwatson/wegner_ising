@@ -21,6 +21,9 @@ WegnerMC::WegnerMC(double e, double T){
   m_e = e;
   m_T = T;
 
+  //Assign the random number generator
+  m_rgen = MTRand();
+
   //Allocate data structures.
   m_lattice.resize(boost::extents[2*L][2*L][2*L]);
   m_plaqs.resize( boost::extents[n_dims][L][L][L] );

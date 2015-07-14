@@ -21,6 +21,7 @@ class WegnerMC; //forward declaration for mutual class defns
 class KernelPipe{
   private:
     typedef boost::multi_array<double, 2> array_2t;
+    typedef boost::multi_array<int, 1> array_1t;
 
   public:
     KernelPipe();
@@ -30,17 +31,29 @@ class KernelPipe{
     
     //--------CV kernel + variables
     void measure_Cv_data(WegnerMC* sim_pt);
+    //TODO: add data to struct
     array_2t CvTe_data;
     double E_sum;
     double Esq_sum;
 
+
     //-------Wilson loop kernel
     void measure_wilson_data(WegnerMC* sim_pt);
-    int wilson_sum;
-    array_2t wilson_data;
-    int wilson_L; //TODO: could replace this with partial functions
-    
+    struct WilsonData{ //keep data organized in a struct
+      //int wilson_sum;
+      //int wilson_L; //TODO: could replace this with partial functions
+      int Li;
+      int Lf;
+      array_1t loops;
+    };
+    WilsonData wilson_data;
 
     //-------history kernel
+    
+    //------hundred history kernel
+    void measure_history_data(WegnerMC* sim_pt);
+    struct HistoryData{
+      array_2t history_data;
+    };
 };
 #endif  /*KERNEL_HPP*/
