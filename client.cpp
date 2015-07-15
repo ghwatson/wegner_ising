@@ -33,9 +33,11 @@ int cv(){
   double T_i = 10.; //start system here for each quench
   double step = 0.1;
 
-  double e_i = 0;
-  double e_f = 0.5;
+  double e_i = 0.5;
+  double e_f = 0.6;
   double step_e = 0.1;
+
+  int L = 8;
 
   //ofstream fout("cv.txt",ios::out);
   ofstream fout;
@@ -46,13 +48,13 @@ int cv(){
   }
 
   //create the MC sim and the measurement kernel to insert into sim.
-  WegnerMC sim = WegnerMC(e_i,T_i);
+  WegnerMC sim = WegnerMC(L,e_i,T_i);
   KernelPipe* pipe = new KernelPipe();
   typedef void (KernelPipe::*kernel_ptr)(WegnerMC* sim); 
   kernel_ptr kernel = &KernelPipe::measure_Cv_data;
 
   //look at a range of disorders
-  for (double e = e_i; e < e_f; e+=step_e){
+  for (double e = e_i; e <= e_f; e+=step_e){
     sim.set_e(e);
     cout << "for disorder " << e << endl;
     //we study a series of independent quenches (this first loop can be parallelized).
@@ -100,7 +102,7 @@ int cv(){
   return EXIT_SUCCESS;
 }
 
-int job_cv(double e,double Tf){
+int job_cv(int L, double e,double Tf){
   double T_i = 10.; //start system here for the  quench
 
   //Create file to output to for this quench
@@ -117,7 +119,7 @@ int job_cv(double e,double Tf){
   }
 
   //create the MC sim and the measurement kernel to insert into sim.
-  WegnerMC sim = WegnerMC(e,T_i);
+  WegnerMC sim = WegnerMC(L,e,T_i);
   KernelPipe* pipe = new KernelPipe();
   typedef void (KernelPipe::*kernel_ptr)(WegnerMC* sim); 
   kernel_ptr kernel = &KernelPipe::measure_Cv_data;
@@ -156,8 +158,9 @@ int job_cv(double e,double Tf){
 int wilson(){
   //TODO: finish and debug this.
   //wilson measurements for a clean system
+  int L = 8;
   
-  WegnerMC sim = WegnerMC(10,0);
+  WegnerMC sim = WegnerMC(L,10,0);
   KernelPipe* pipe = new KernelPipe();
   typedef void (KernelPipe::*kernel_ptr)(WegnerMC* sim); 
   kernel_ptr kernel = &KernelPipe::measure_wilson_data;
@@ -245,11 +248,17 @@ void hundred_history(){
 
 int main(int argc, const char* argv[]){
 
-  // CV stuff
-  double e = atof(argv[1]);
-  double Tf = atof(argv[2]);
+  //CV
+  //int exit = cv();
 
-  int exit = job_cv(e,Tf);
+  // CV batch stuff
+  double L = atoi(argv[1]);
+  double e = atof(argv[2]);
+  double Tf = atof(argv[3]);
+  int exit = job_cv(L,e,Tf);
+
+  //clean wilson
+  //int exit = wilson();
 
   return exit;
 }

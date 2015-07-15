@@ -14,7 +14,7 @@
 #include <typeinfo>
 
 const int n_dims = 3;
-const int L = 8; //length in plaquettes/number of sites (PBC implies they're the same)
+//const int L = 8; //length in plaquettes/number of sites (PBC implies they're the same)
 
 class KernelPipe; //forward declaration for mutual class defns
 
@@ -32,6 +32,7 @@ class WegnerMC{
     typedef array_2t::array_view<2>::type view_2t;
     
     MTRand m_rgen;
+    int m_L;
     array_3t m_lattice;
     array_4t m_plaqs; //[normal][x][y][z]
 
@@ -53,7 +54,7 @@ class WegnerMC{
     void update_plaqs();
 
   public:
-    WegnerMC(double e, double T);
+    WegnerMC(int L, double e, double T);
     ~WegnerMC();
     double calc_E();
     void initialize(double T_high);

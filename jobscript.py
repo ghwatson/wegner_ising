@@ -7,10 +7,12 @@ import sys
 #Parameter space for jobs
 e_i = 0.
 e_f = 0.5
-e_steps = 5
+e_steps = 6
 tf_i = 1.
 tf_f = 2.
-tf_steps = 10
+tf_steps = 11
+
+L = 10
 
 def worker(data):
     #unpack worker data.
@@ -18,7 +20,7 @@ def worker(data):
 
     #call the c++ program that will perform the job
     script_path = os.path.dirname(os.path.realpath(sys.argv[0]))
-    wegner_path = script_path + "/wegner {0} {1}".format(e,tf)
+    wegner_path = script_path + "/wegner {0} {1} {2}".format(L,e,tf)
     args = "bin/bar -c somefile.xml -d text.txt -r aString -f anotherString".split()
     cmd = ["/bin/bash",wegner_path]
     cmd = wegner_path
