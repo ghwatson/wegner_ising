@@ -220,7 +220,8 @@ double WegnerMC::calc_dE(int orientation, int x, int y, int z, double T){
 
     int neg_d_id[3] = {2*neg_site[0], 2*neg_site[1], 2*neg_site[2]};
     neg_d_id[orientation] = (neg_d_id[orientation] + 1) % (2*m_L);
-    neg_d_id[span_dir] = (2*m_L + neg_d_id[span_dir]-1) % (2*m_L);
+    //neg_d_id[span_dir] = (2*m_L + neg_d_id[span_dir]-1) % (2*m_L); //this is a bug!
+    neg_d_id[span_dir] = (neg_d_id[span_dir]+1) % (2*m_L);
     double neg_u = m_lattice[neg_d_id[0]][neg_d_id[1]][neg_d_id[2]];
 
     E0 += -(1+m_e*neg_u)*neg_plaq;
